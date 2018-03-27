@@ -1,8 +1,8 @@
 <?php
-/*********************************************************************************  
+/*********************************************************************************
  *  Sentrifugo is an open source human resource management system.
  *  Copyright (C) 2014 Sapplica
- *   
+ *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -31,15 +31,18 @@ $whoops = new \Whoops\Run;
 $whoops->pushHandler(new \Whoops\Handler\PrettyPageHandler);
 $whoops->register();
 
+// Try to mitigate XSS cookie stealing
+ini_set("session.cookie_httponly", 1);
+
 $filepath = 'install/index.php';
 
 if(file_exists($filepath)) {
-	header("Location: install/index.php");  
+	header("Location: install/index.php");
 	exit;
 }
-   
-// constants 
-    
+
+// constants
+
 require_once 'public/constants.php';
 require_once 'public/site_constants.php';
 require_once 'public/email_constants.php';
@@ -52,7 +55,7 @@ require_once 'application/modules/default/library/sapp/Global.php';
 require_once 'public/text_constants.php';
 
 /* Query to fetch db version and then comparing with code version */
-$mysqlPDO = new PDO('mysql:host='.SENTRIFUGO_HOST.';dbname='.SENTRIFUGO_DBNAME.'',SENTRIFUGO_USERNAME, SENTRIFUGO_PASSWORD,array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));   
+$mysqlPDO = new PDO('mysql:host='.SENTRIFUGO_HOST.';dbname='.SENTRIFUGO_DBNAME.'',SENTRIFUGO_USERNAME, SENTRIFUGO_PASSWORD,array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
 $date= gmdate("Y-m-d H:i:s");
 $stmt =  $mysqlPDO->prepare("SHOW TABLES LIKE 'main_patches_version'");
 $stmt->execute();
@@ -88,7 +91,7 @@ if(!empty($count)) {
 
 /**
  *  If both codeversion and dbversion are equal then application will load.
- *  Else it will be redirected to upgrade.php using form post. 
+ *  Else it will be redirected to upgrade.php using form post.
  */
 if(isset($dbid) && isset($codeid)) {
 	if($dbid == $codeid) {
@@ -124,8 +127,8 @@ if(isset($dbid) && isset($codeid)) {
 	document.getElementById('upgrade').submit();
 </script>
 <?php
-
-       	}   
+       	}
 } else {
-	header("Location: error.php?param=".sapp_Global::_encrypt('db')."");exit;
-}            
+	header("Location: error.php?param=".sapp_Global::_encrypt('db')."");
+	exit;
+}
