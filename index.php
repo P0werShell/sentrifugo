@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- *  Sentirfugo Support <support@sentrifugo.com>
+ *  Sentrifugo Support <support@sentrifugo.com>
  ********************************************************************************/
 
 // ^^^ Did Sentrifugo REALLY misspell their own name??! -- xrobau 2018-03-27
