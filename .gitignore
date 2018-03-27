@@ -8,3 +8,4 @@ logs/xdebug.log
 logs/application.log
 .DS_Store
 vendor/
+logs/

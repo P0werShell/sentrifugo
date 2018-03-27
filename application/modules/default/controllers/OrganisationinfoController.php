@@ -1587,32 +1587,31 @@ class Default_OrganisationinfoController extends Zend_Controller_Action
 		$this->view->orgheadsData = $orgheadsData;
 		$this->view->posted_prevorghead_rm = $posted_prevorghead_rm;
 	}
-}
 
-public function sendmailstoemployees($oldRM,$newRM)
-{
-	$baseUrl = BASE_URL;
-	$employeeModal = new Default_Model_Employee();
-	$employessunderEmpId = $employeeModal->getEmployeesUnderRM($oldRM);
-	/* Send Mails to the employees whose reporting manager is changed */
-	$oldRMData = $employeeModal->getsingleEmployeeData($oldRM);
-	$newRMData = $employeeModal->getsingleEmployeeData($newRM);
-	if(!empty($newRMData))
+	public function sendmailstoemployees($oldRM,$newRM)
 	{
-		foreach($employessunderEmpId as $employee)
+		$baseUrl = BASE_URL;
+		$employeeModal = new Default_Model_Employee();
+		$employessunderEmpId = $employeeModal->getEmployeesUnderRM($oldRM);
+		/* Send Mails to the employees whose reporting manager is changed */
+		$oldRMData = $employeeModal->getsingleEmployeeData($oldRM);
+		$newRMData = $employeeModal->getsingleEmployeeData($newRM);
+		if(!empty($newRMData))
 		{
-			$options['subject'] = APPLICATION_NAME.' : Change of reporting manager';
-			$options['header'] = 'Change of reporting manager';
-			$options['toEmail'] = $employee['emailaddress'];
-			$options['toName'] = $employee['userfullname'];
-			$options['message'] = '<div>Hello '.ucfirst($employee['userfullname']).',
-				<div>'.ucfirst($newRMData[0]['userfullname']).' is your new reporting manager.</div>
-				<div style="padding:20px 0 10px 0;">Please <a href="'.$baseUrl.'/index/popup" target="_blank" style="color:#b3512f;">click here</a> to login </div>
-				</div>';
-			$result = sapp_Global::_sendEmail($options);
+			foreach($employessunderEmpId as $employee)
+			{
+				$options['subject'] = APPLICATION_NAME.' : Change of reporting manager';
+				$options['header'] = 'Change of reporting manager';
+				$options['toEmail'] = $employee['emailaddress'];
+				$options['toName'] = $employee['userfullname'];
+				$options['message'] = '<div>Hello '.ucfirst($employee['userfullname']).',
+					<div>'.ucfirst($newRMData[0]['userfullname']).' is your new reporting manager.</div>
+					<div style="padding:20px 0 10px 0;">Please <a href="'.$baseUrl.'/index/popup" target="_blank" style="color:#b3512f;">click here</a> to login </div>
+					</div>';
+				$result = sapp_Global::_sendEmail($options);
 
+			}
 		}
 	}
-}
 
 }

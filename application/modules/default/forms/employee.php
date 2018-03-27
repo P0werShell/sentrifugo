@@ -382,8 +382,7 @@ $final_emp_id->getValidator('Db_NoRecordExists')->setMessage('Employee ID alread
 			)
 		));
 
-		>>>>>>> ldap/LDAP
-			$emailaddress->setRequired(true);
+		$emailaddress->setRequired(true);
 		$emailaddress->addValidator('NotEmpty', false, array('messages' => 'Please enter email.'));
 
 		$emailaddress->addValidator("regex",true,array(
