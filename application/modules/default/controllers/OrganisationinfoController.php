@@ -1370,262 +1370,249 @@ class Default_OrganisationinfoController extends Zend_Controller_Action
 		}
 		$org_id = $this->_request->getParam('orgid',null);
 		$msgarray = array();$prevorgheadId = '';$posted_prevorghead_rm = '';
-		try
+		$user_model = new Default_Model_Usermanagement();
+		$orgInfoModel = new Default_Model_Organisationinfo();
+		$countriesModel = new Default_Model_Countries();
+		$statesmodel = new Default_Model_States();
+		$citiesmodel = new Default_Model_Cities();
+		$role_model = new Default_Model_Roles();
+		$prefixModel = new Default_Model_Prefix();
+		$identity_code_model = new Default_Model_Identitycodes();
+		$jobtitlesModel = new Default_Model_Jobtitles();
+		$employeeModal = new Default_Model_Employee();
+		$positionsmodel = new Default_Model_Positions();
+		$form = new Default_Form_Organisationhead();
+
+		$form->setAttrib('action',BASE_URL.'organisationinfo/addorghead/orgid/'.$org_id);
+
+		$identity_codes = $identity_code_model->getIdentitycodesRecord();
+		$role_data = $role_model->getRolesList_orginfo();
+
+		$flag = 'true';
+		$emp_identity_code = isset($identity_codes[0])?$identity_codes[0]['employee_code']:"";
+		if($emp_identity_code!='')
 		{
-			$user_model = new Default_Model_Usermanagement();
-			$orgInfoModel = new Default_Model_Organisationinfo();
-			$countriesModel = new Default_Model_Countries();
-			$statesmodel = new Default_Model_States();
-			$citiesmodel = new Default_Model_Cities();
-			$role_model = new Default_Model_Roles();
-			$prefixModel = new Default_Model_Prefix();
-			$identity_code_model = new Default_Model_Identitycodes();
-			$jobtitlesModel = new Default_Model_Jobtitles();
-			$employeeModal = new Default_Model_Employee();
-			$positionsmodel = new Default_Model_Positions();
-			$form = new Default_Form_Organisationhead();
+			$emp_id = $emp_identity_code.str_pad($user_model->getMaxEmpId($emp_identity_code), 4, '0', STR_PAD_LEFT);
+		}
+		else
+		{
+			$emp_id = '';
+			$msgarray['employeeId'] = 'Identity codes are not configured yet.';
+			$flag = 'false';
+		}
+		$form->employeeId->setValue($emp_id);
 
-			$form->setAttrib('action',BASE_URL.'organisationinfo/addorghead/orgid/'.$org_id);
+		$form->emprole->addMultiOptions(array('' => 'Select Role')+$role_data);
+		if(empty($role_data))
+		{
+			$msgarray['emprole'] = 'Roles are not added yet.';
+			$flag = 'false';
+		}
+		$prefixData = $prefixModel->getPrefixList();
 
-			$identity_codes = $identity_code_model->getIdentitycodesRecord();
-			$role_data = $role_model->getRolesList_orginfo();
-
-			$flag = 'true';
-			$emp_identity_code = isset($identity_codes[0])?$identity_codes[0]['employee_code']:"";
-			if($emp_identity_code!='')
+		$form->prefix_id->addMultiOption('','Select Prefix');
+		if(!empty($prefixData))
+		{
+			foreach ($prefixData as $prefixres)
 			{
-				$emp_id = $emp_identity_code.str_pad($user_model->getMaxEmpId($emp_identity_code), 4, '0', STR_PAD_LEFT);
+				$form->prefix_id->addMultiOption($prefixres['id'],$prefixres['prefix']);
 			}
-			else
-			{
-				$emp_id = '';
-				$msgarray['employeeId'] = 'Identity codes are not configured yet.';
-				$flag = 'false';
-			}
-			$form->employeeId->setValue($emp_id);
+		}
+		else
+		{
+			$msgarray['prefix_id'] = 'Prefixes are not configured yet.';
+		}
 
-			$form->emprole->addMultiOptions(array('' => 'Select Role')+$role_data);
-			if(empty($role_data))
+		$jobtitleData = $jobtitlesModel->getJobTitleList();
+		if(!empty($jobtitleData))
+		{
+			foreach ($jobtitleData as $jobtitleres)
 			{
-				$msgarray['emprole'] = 'Roles are not added yet.';
-				$flag = 'false';
+				$form->jobtitle_id->addMultiOption($jobtitleres['id'],$jobtitleres['jobtitlename']);
 			}
-			$prefixData = $prefixModel->getPrefixList();
+		}
+		else
+		{
+			$msgarray['jobtitle_id'] = 'Career Tracks are not configured yet.';
+			$msgarray['position_id'] = 'Career Levels are not configured yet.';
+		}
 
-			$form->prefix_id->addMultiOption('','Select Prefix');
-			if(!empty($prefixData))
+		$form->position_id->addMultiOption('','Select a Career Level');
+		if(isset($_POST['jobtitle_id']) && $_POST['jobtitle_id'] != '')
+		{
+			$jobtitle_id =  $_POST['jobtitle_id'];
+			$positionlistArr = $positionsmodel->getPositionList($jobtitle_id);
+
+			if(sizeof($positionlistArr) > 0)
 			{
-				foreach ($prefixData as $prefixres)
+				foreach ($positionlistArr as $positionlistres)
 				{
-					$form->prefix_id->addMultiOption($prefixres['id'],$prefixres['prefix']);
+					$form->position_id->addMultiOption($positionlistres['id'],$positionlistres['positionname']);
 				}
 			}
-			else
+
+		}
+
+		if(isset($_POST['prevorghead_rm']) && $_POST['prevorghead_rm'] != '')
+		{
+			$posted_prevorghead_rm =  $_POST['prevorghead_rm'];
+		}
+
+		$orgheadsData = $employeeModal->getEmployeesForOrgHead();
+
+		$emp_data = $employeeModal->fetchRow("is_orghead = 1");
+		if(!empty($emp_data))
+		{
+			$user_data = $user_model->fetchRow("id = ".$emp_data->user_id);
+			if(!empty($user_data))
 			{
-				$msgarray['prefix_id'] = 'Prefixes are not configured yet.';
-			}
-
-			$jobtitleData = $jobtitlesModel->getJobTitleList();
-			if(!empty($jobtitleData))
-			{
-				foreach ($jobtitleData as $jobtitleres)
-				{
-					$form->jobtitle_id->addMultiOption($jobtitleres['id'],$jobtitleres['jobtitlename']);
-				}
-			}
-			else
-			{
-				$msgarray['jobtitle_id'] = 'Career Tracks are not configured yet.';
-				$msgarray['position_id'] = 'Career Levels are not configured yet.';
-			}
-
-			$form->position_id->addMultiOption('','Select a Career Level');
-			if(isset($_POST['jobtitle_id']) && $_POST['jobtitle_id'] != '')
-			{
-				$jobtitle_id =  $_POST['jobtitle_id'];
-				$positionlistArr = $positionsmodel->getPositionList($jobtitle_id);
-
-				if(sizeof($positionlistArr) > 0)
-				{
-					foreach ($positionlistArr as $positionlistres)
-					{
-						$form->position_id->addMultiOption($positionlistres['id'],$positionlistres['positionname']);
-					}
-				}
-
-			}
-
-			if(isset($_POST['prevorghead_rm']) && $_POST['prevorghead_rm'] != '')
-			{
-				$posted_prevorghead_rm =  $_POST['prevorghead_rm'];
-			}
-
-			$orgheadsData = $employeeModal->getEmployeesForOrgHead();
-
-			$emp_data = $employeeModal->fetchRow("is_orghead = 1");
-			if(!empty($emp_data))
-			{
-				$user_data = $user_model->fetchRow("id = ".$emp_data->user_id);
-				if(!empty($user_data))
-				{
-					$prevorgheadId = $user_data->id;
-				}else{
-					$form->removeElement('prevorghead_rm');
-				}
+				$prevorgheadId = $user_data->id;
 			}else{
 				$form->removeElement('prevorghead_rm');
 			}
-			if($this->getRequest()->getPost())
+		}else{
+			$form->removeElement('prevorghead_rm');
+		}
+		if($this->getRequest()->getPost())
+		{
+			if($form->isValid($this->_request->getPost()) && $flag != 'false')
 			{
-				if($form->isValid($this->_request->getPost()) && $flag != 'false')
-				{
-					$jobtitle_id = $this->_request->getParam('jobtitle_id',null);
-					$position_id = $this->_request->getParam('position_id',null);
-					$date_of_joining = sapp_Global::change_date($this->_request->getParam('date_of_joining_head',null),'database');
-					$employeeId = $this->_request->getParam('employeeId',null);
-					$emprole = $this->_request->getParam('emprole',null);
-					$emailaddress = $this->_request->getParam('emailaddress',null);
-					$emppassword = sapp_Global::generatePassword();
-					$first_name = trim($this->_request->getParam('firstname_orghead',null));
-					$last_name = trim($this->_request->getParam('lastname_orghead',null));
-					//$userfullname = trim($this->_request->getParam('orghead',null));
-					$userfullname = $first_name.' '.$last_name;
-					$prefix_id = $this->_request->getParam('prefix_id',null);
-					$user_id = $this->_request->getParam('user_id',null);
-					$prevorghead_rm = $this->_request->getParam('prevorghead_rm',null);
-					$prevheadid = $this->_request->getParam('prevheadid',null);
+				$jobtitle_id = $this->_request->getParam('jobtitle_id',null);
+				$position_id = $this->_request->getParam('position_id',null);
+				$date_of_joining = sapp_Global::change_date($this->_request->getParam('date_of_joining_head',null),'database');
+				$employeeId = $this->_request->getParam('employeeId',null);
+				$emprole = $this->_request->getParam('emprole',null);
+				$emailaddress = $this->_request->getParam('emailaddress',null);
+				$emppassword = sapp_Global::generatePassword();
+				$first_name = trim($this->_request->getParam('firstname_orghead',null));
+				$last_name = trim($this->_request->getParam('lastname_orghead',null));
+				//$userfullname = trim($this->_request->getParam('orghead',null));
+				$userfullname = $first_name.' '.$last_name;
+				$prefix_id = $this->_request->getParam('prefix_id',null);
+				$user_id = $this->_request->getParam('user_id',null);
+				$prevorghead_rm = $this->_request->getParam('prevorghead_rm',null);
+				$prevheadid = $this->_request->getParam('prevheadid',null);
 
-					$user_data = array(
-						'emprole' => $emprole,
-						'firstname' => $first_name,
-						'lastname' => $last_name,
-						'userfullname' => $userfullname,
-						'emailaddress' => $emailaddress,
-						'jobtitle_id'=> $jobtitle_id,
-						'emppassword' => md5($emppassword),
-						'employeeId' => $employeeId,
-						'selecteddate' => $date_of_joining,
-						'userstatus' => 'old',
-						'modeofentry' => 'Direct',
-						'createdby'	=> $loginUserId,
-						'createddate' => gmdate("Y-m-d H:i:s"),
-						'modifiedby'=> $loginUserId,
-						'modifieddate'=> gmdate("Y-m-d H:i:s"),
-						'isactive' => 1,
-					);
-					$emp_data = array(
-						'jobtitle_id'=>$jobtitle_id,
-						'position_id'=>$position_id,
-						'prefix_id'=>$prefix_id,
-						'reporting_manager' => 0,
-						'date_of_joining'=>$date_of_joining,
-						'createdby'	=> $loginUserId,
-						'createddate' => gmdate("Y-m-d H:i:s"),
-						'modifiedby'=>$loginUserId,
-						'modifieddate'=>gmdate("Y-m-d H:i:s"),
-						'isactive' => 1,
-						'is_orghead' => 1,
-					);
+				$user_data = array(
+					'emprole' => $emprole,
+					'firstname' => $first_name,
+					'lastname' => $last_name,
+					'userfullname' => $userfullname,
+					'emailaddress' => $emailaddress,
+					'jobtitle_id'=> $jobtitle_id,
+					'emppassword' => md5($emppassword),
+					'employeeId' => $employeeId,
+					'selecteddate' => $date_of_joining,
+					'userstatus' => 'old',
+					'modeofentry' => 'Direct',
+					'createdby'	=> $loginUserId,
+					'createddate' => gmdate("Y-m-d H:i:s"),
+					'modifiedby'=> $loginUserId,
+					'modifieddate'=> gmdate("Y-m-d H:i:s"),
+					'isactive' => 1,
+				);
+				$emp_data = array(
+					'jobtitle_id'=>$jobtitle_id,
+					'position_id'=>$position_id,
+					'prefix_id'=>$prefix_id,
+					'reporting_manager' => 0,
+					'date_of_joining'=>$date_of_joining,
+					'createdby'	=> $loginUserId,
+					'createddate' => gmdate("Y-m-d H:i:s"),
+					'modifiedby'=>$loginUserId,
+					'modifieddate'=>gmdate("Y-m-d H:i:s"),
+					'isactive' => 1,
+					'is_orghead' => 1,
+				);
 
-					$org_data = array(
-						'modifiedby'=>$loginUserId,
-						'modifieddate'=>gmdate("Y-m-d H:i:s"),
-					);
+				$org_data = array(
+					'modifiedby'=>$loginUserId,
+					'modifieddate'=>gmdate("Y-m-d H:i:s"),
+				);
 
-					if($emp_identity_code!='')
-						$emp_id = $emp_identity_code.str_pad($user_model->getMaxEmpId($emp_identity_code), 4, '0', STR_PAD_LEFT);
-					else
-						$emp_id = '';
-					$user_data['employeeId'] = $emp_id;
-
-
-					$db = Zend_Db_Table::getDefaultAdapter();
-					$db->beginTransaction();
-					try
-					{
-
-						$user_id = $user_model->SaveorUpdateUserData($user_data, '');
-
-						$emp_data['user_id'] = $user_id;
-						$employeeModal->SaveorUpdateEmployeeData($emp_data, '');
-
-						if(isset($prevheadid) && $prevheadid != '')
-						{
-							$org_data['orghead'] = $user_id;
-							$orgwhere = array('id=?'=>$org_id);
-							$orgInfoModel->SaveorUpdateData($org_data, $orgwhere);
-
-							$orgInfoModel->changeOrgHead($prevheadid,$user_id,$prevorghead_rm);
-
-							$this->sendmailstoemployees($prevheadid,$user_id);
-						}
-						$tableid = $user_id;
-						$actionflag = 1;
-						$menuID = EMPLOYEE;
-						try
-						{
-							$result = sapp_Global::logManager($menuID,$actionflag,$loginUserId,$tableid);
-						}
-						catch(Exception $e) { echo $e->getMessage();}
-						$close = 'close';
-						$this->view->popup=$close;
-						$this->view->eventact = 'added';
-						$db->commit();
-					}
-					catch(Exception $e)
-					{
-						$db->rollBack();
-					}
-				}
+				if($emp_identity_code!='')
+					$emp_id = $emp_identity_code.str_pad($user_model->getMaxEmpId($emp_identity_code), 4, '0', STR_PAD_LEFT);
 				else
+					$emp_id = '';
+				$user_data['employeeId'] = $emp_id;
+
+
+				$db = Zend_Db_Table::getDefaultAdapter();
+				$db->beginTransaction();
+
+				$user_id = $user_model->SaveorUpdateUserData($user_data, '');
+
+				$emp_data['user_id'] = $user_id;
+				$employeeModal->SaveorUpdateEmployeeData($emp_data, '');
+
+				if(isset($prevheadid) && $prevheadid != '')
 				{
-					$messages = $form->getMessages();
-					foreach ($messages as $key => $val)
+					$org_data['orghead'] = $user_id;
+					$orgwhere = array('id=?'=>$org_id);
+					$orgInfoModel->SaveorUpdateData($org_data, $orgwhere);
+
+					$orgInfoModel->changeOrgHead($prevheadid,$user_id,$prevorghead_rm);
+
+					$this->sendmailstoemployees($prevheadid,$user_id);
+				}
+				$tableid = $user_id;
+				$actionflag = 1;
+				$menuID = EMPLOYEE;
+				try
+				{
+					$result = sapp_Global::logManager($menuID,$actionflag,$loginUserId,$tableid);
+				}
+				catch(Exception $e) { echo $e->getMessage();}
+				$close = 'close';
+				$this->view->popup=$close;
+				$this->view->eventact = 'added';
+				$db->commit();
+			}
+			else
+			{
+				$messages = $form->getMessages();
+				foreach ($messages as $key => $val)
+				{
+					foreach($val as $key2 => $val2)
 					{
-						foreach($val as $key2 => $val2)
-						{
-							$msgarray[$key] = $val2;
-							break;
-						}
+						$msgarray[$key] = $val2;
+						break;
 					}
 				}
 			}
-			$this->view->prevorgheadId = $prevorgheadId;
-			$this->view->form = $form;
-			$this->view->msgarray = $msgarray;
-			$this->view->orgheadsData = $orgheadsData;
-			$this->view->posted_prevorghead_rm = $posted_prevorghead_rm;
 		}
-		catch(Exception $e)
-		{
-			echo $e->getMessage(); die;
-		}
+		$this->view->prevorgheadId = $prevorgheadId;
+		$this->view->form = $form;
+		$this->view->msgarray = $msgarray;
+		$this->view->orgheadsData = $orgheadsData;
+		$this->view->posted_prevorghead_rm = $posted_prevorghead_rm;
 	}
+}
 
-	public function sendmailstoemployees($oldRM,$newRM)
+public function sendmailstoemployees($oldRM,$newRM)
+{
+	$baseUrl = BASE_URL;
+	$employeeModal = new Default_Model_Employee();
+	$employessunderEmpId = $employeeModal->getEmployeesUnderRM($oldRM);
+	/* Send Mails to the employees whose reporting manager is changed */
+	$oldRMData = $employeeModal->getsingleEmployeeData($oldRM);
+	$newRMData = $employeeModal->getsingleEmployeeData($newRM);
+	if(!empty($newRMData))
 	{
-		$baseUrl = BASE_URL;
-		$employeeModal = new Default_Model_Employee();
-		$employessunderEmpId = $employeeModal->getEmployeesUnderRM($oldRM);
-		/* Send Mails to the employees whose reporting manager is changed */
-		$oldRMData = $employeeModal->getsingleEmployeeData($oldRM);
-		$newRMData = $employeeModal->getsingleEmployeeData($newRM);
-		if(!empty($newRMData))
+		foreach($employessunderEmpId as $employee)
 		{
-			foreach($employessunderEmpId as $employee)
-			{
-				$options['subject'] = APPLICATION_NAME.' : Change of reporting manager';
-				$options['header'] = 'Change of reporting manager';
-				$options['toEmail'] = $employee['emailaddress'];
-				$options['toName'] = $employee['userfullname'];
-				$options['message'] = '<div>Hello '.ucfirst($employee['userfullname']).',
-					<div>'.ucfirst($newRMData[0]['userfullname']).' is your new reporting manager.</div>
-					<div style="padding:20px 0 10px 0;">Please <a href="'.$baseUrl.'/index/popup" target="_blank" style="color:#b3512f;">click here</a> to login </div>
-					</div>';
-				$result = sapp_Global::_sendEmail($options);
+			$options['subject'] = APPLICATION_NAME.' : Change of reporting manager';
+			$options['header'] = 'Change of reporting manager';
+			$options['toEmail'] = $employee['emailaddress'];
+			$options['toName'] = $employee['userfullname'];
+			$options['message'] = '<div>Hello '.ucfirst($employee['userfullname']).',
+				<div>'.ucfirst($newRMData[0]['userfullname']).' is your new reporting manager.</div>
+				<div style="padding:20px 0 10px 0;">Please <a href="'.$baseUrl.'/index/popup" target="_blank" style="color:#b3512f;">click here</a> to login </div>
+				</div>';
+			$result = sapp_Global::_sendEmail($options);
 
-			}
 		}
 	}
+}
 
 }
